@@ -10,7 +10,7 @@ resource "aws_autoscaling_group" "default" {
   tag {
     key                 = "Env"
     propagate_at_launch = true
-    value               = "production"
+    value               = "${var.app_environment}"
   }
 
   tag {
@@ -19,13 +19,10 @@ resource "aws_autoscaling_group" "default" {
     value               = "Containers"
   }
 
-  target_group_arns    = [aws_alb_target_group.default.arn]
+  target_group_arns    = [aws_alb_target_group.target_group.arn]
   termination_policies = ["OldestInstance"]
-
-  vpc_zone_identifier = [
-    aws_subnet.public__a.id,
-    aws_subnet.public__b.id
-  ]
+  
+  vpc_zone_identifier = aws_subnet.public.*.id 
 }
 
 #Define the autoscaling launch configuration
@@ -60,7 +57,23 @@ resource "aws_iam_instance_profile" "ecs" {
 #Attach a security group to the EC2 instance, accepting inbound traffic only from the LB's security group
 resource "aws_security_group" "ec2" {
   description = "security-group--ec2"
+  name = "security-group--ec2"
+  vpc_id = aws_vpc.aws-vpc.id
+  
+  ingress {
+    from_port       = 0
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb-sc.id]
+    to_port         = 65535
+  }
 
+  ingress {
+    from_port       = 22
+    protocol        = "tcp"
+    to_port         = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
   egress {
     cidr_blocks = ["0.0.0.0/0"]
     from_port   = 0
@@ -68,19 +81,11 @@ resource "aws_security_group" "ec2" {
     to_port     = 0
   }
 
-  ingress {
-    from_port       = 0
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-    to_port         = 65535
-  }
-
-  name = "security-group--ec2"
-
   tags = {
-    Env  = "production"
-    Name = "security-group--ec2"
+    Name        = "${var.app_name}-service-sg"
+    Environment = var.app_environment
   }
 
-  vpc_id = aws_vpc.default.id
 }
+
+

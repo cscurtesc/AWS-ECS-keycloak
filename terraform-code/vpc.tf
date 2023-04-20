@@ -1,78 +1,55 @@
 #Create the VPC
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
+resource "aws_vpc" "aws-vpc" {
+  cidr_block = var.cidr
 
   tags = {
-    Env  = "production"
-    Name = "vpc"
+    Name        = "${var.app_name}-vpc"
+    Environment = var.app_environment
   }
 }
 
 #Create the Internet Gateway
-resource "aws_internet_gateway" "default" {
-  vpc_id = aws_vpc.default.id
+resource "aws_internet_gateway" "aws-igw" {
+  vpc_id = aws_vpc.aws-vpc.id
 
   tags = {
-    Env  = "production"
-    Name = "internet-gateway"
+    Name        = "${var.app_name}-igw"
+    Environment = var.app_environment
   }
 }
 
-#Create the public routing table and associate it with the IG
-resource "aws_main_route_table_association" "default" {
-  route_table_id = aws_route_table.public.id
-  vpc_id         = aws_vpc.default.id
+#Create the 2 public subnets, in different AZs
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.aws-vpc.id
+  cidr_block              = element(var.public_subnets, count.index)
+  availability_zone       = element(var.availability_zones, count.index)
+  count                   = length(var.public_subnets)
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "${var.app_name}-public-subnet-${count.index + 1}"
+    Environment = var.app_environment
+  }
 }
 
 resource "aws_route_table" "public" {
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.default.id
-  }
+  vpc_id = aws_vpc.aws-vpc.id
 
   tags = {
-    Env  = "production"
-    Name = "route-table-public"
+    Name        = "${var.app_name}-routing-table-public"
+    Environment = var.app_environment
   }
-
-  vpc_id = aws_vpc.default.id
 }
 
-#Create 2 subnets in 2 different Availability Zones
-resource "aws_subnet" "public__a" {
-  availability_zone       = "us-east-2a"
-  cidr_block              = "10.0.0.0/24"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Env  = "production"
-    Name = "public-us-east-2a-blog"
-  }
-
-  vpc_id = aws_vpc.default.id
+resource "aws_route" "public" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.aws-igw.id
 }
-
-resource "aws_subnet" "public__b" {
-  availability_zone       = "us-east-2b"
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Env  = "production"
-    Name = "public-us-east-2b-blog"
-  }
-
-  vpc_id = aws_vpc.default.id
-}
-
 
 #Associate the 2 subnets created above with the public routing table, so the resources placed in here have Internet access
-resource "aws_route_table_association" "public__a" {
+resource "aws_route_table_association" "public" {
+  count          = length(var.public_subnets)
+  subnet_id      = element(aws_subnet.public.*.id, count.index)
   route_table_id = aws_route_table.public.id
-  subnet_id      = aws_subnet.public__a.id
-}
-
-resource "aws_route_table_association" "public__b" {
-  route_table_id = aws_route_table.public.id
-  subnet_id      = aws_subnet.public__b.id
 }

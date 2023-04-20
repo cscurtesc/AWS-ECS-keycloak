@@ -1,7 +1,7 @@
 resource "aws_ecs_task_definition" "default" {
   family                   = "default"
   container_definitions    = jsonencode([{
-    name            = "keycloak"
+    name            = "${var.app_name}-${var.app_environment}-container"
     image           = "cscurtesc/keycloak:latest"
     essential       = true
     command         = ["start-dev"]
@@ -28,19 +28,20 @@ resource "aws_ecs_task_definition" "default" {
 }
 
 
-resource "aws_ecs_service" "default" {
-  cluster                 = aws_ecs_cluster.production.id
+resource "aws_ecs_service" "ecs-service" {
+  name                    = "${var.app_name}-${var.app_environment}-ecs-service"
+  cluster                 = aws_ecs_cluster.ecs-cluster.id
+  task_definition         = aws_ecs_task_definition.default.arn  
   depends_on              = [aws_iam_role_policy_attachment.ecs]
   desired_count           = 1
   enable_ecs_managed_tags = true
   force_new_deployment    = true
 
   load_balancer {
-    target_group_arn = aws_alb_target_group.default.arn
-    container_name   = "keycloak"
+    target_group_arn = aws_alb_target_group.target_group.arn
+    container_name   = "${var.app_name}-${var.app_environment}-container"
     container_port   = 8080
   }
 
-  name            = "keycloak"
-  task_definition = aws_ecs_task_definition.default.arn
 }
+
