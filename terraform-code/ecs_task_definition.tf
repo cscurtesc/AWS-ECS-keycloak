@@ -1,11 +1,11 @@
-resource "aws_ecs_task_definition" "default" {
-  family                   = "default"
+resource "aws_ecs_task_definition" "aws-ecs-task" {
+  family = "${var.app_name}-task"
   container_definitions    = jsonencode([{
     name            = "${var.app_name}-${var.app_environment}-container"
     image           = "cscurtesc/keycloak:latest"
     essential       = true
     command         = ["start-dev"]
-    cpu             = 1
+    cpu             = 256
     memory          = 512
     environment     = [
                 {
@@ -25,23 +25,34 @@ resource "aws_ecs_task_definition" "default" {
   }])
   network_mode             = "host"
   requires_compatibilities = ["EC2"]
+  memory                   = "512"
+  cpu                      = "256"
+  execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
+  task_role_arn            = aws_iam_role.ecsTaskExecutionRole.arn
+
+  tags = {
+    Name        = "${var.app_name}-ecs-td"
+    Environment = var.app_environment
+  }
 }
 
 
-resource "aws_ecs_service" "ecs-service" {
+resource "aws_ecs_service" "aws-ecs-service" {
   name                    = "${var.app_name}-${var.app_environment}-ecs-service"
-  cluster                 = aws_ecs_cluster.ecs-cluster.id
-  task_definition         = aws_ecs_task_definition.default.arn  
-  depends_on              = [aws_iam_role_policy_attachment.ecs]
+  cluster                 = aws_ecs_cluster.aws-ecs-cluster.id
+  task_definition         = aws_ecs_task_definition.aws-ecs-task.arn
+  scheduling_strategy     = "REPLICA"
   desired_count           = 1
-  enable_ecs_managed_tags = true
   force_new_deployment    = true
-
+ 
   load_balancer {
-    target_group_arn = aws_alb_target_group.target_group.arn
+    target_group_arn = aws_lb_target_group.target_group.arn
     container_name   = "${var.app_name}-${var.app_environment}-container"
     container_port   = 8080
   }
 
+  depends_on = [aws_lb_listener.listener]
 }
+
+
 
