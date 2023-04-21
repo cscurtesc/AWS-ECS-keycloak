@@ -27,8 +27,8 @@ resource "aws_ecs_task_definition" "aws-ecs-task" {
   requires_compatibilities = ["EC2"]
   memory                   = "512"
   cpu                      = "256"
-  execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
-  task_role_arn            = aws_iam_role.ecsTaskExecutionRole.arn
+#  execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
+#  task_role_arn            = aws_iam_role.ecsTaskExecutionRole.arn
 
   tags = {
     Name        = "${var.app_name}-ecs-td"
