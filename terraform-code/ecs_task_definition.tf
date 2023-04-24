@@ -22,8 +22,17 @@ resource "aws_ecs_task_definition" "aws-ecs-task" {
           hostPort         : 8080
         }
       ]
+    logConfiguration: {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/environments/staging/apps/keycloak/services/AWS-KEYCLOAK",
+        "awslogs-region": "${var.aws_region}",
+        "awslogs-stream-prefix": "ecs"
+
+}
+}
   }])
-  network_mode             = "host"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["EC2"]
   memory                   = "512"
   cpu                      = "256"
@@ -44,6 +53,10 @@ resource "aws_ecs_service" "aws-ecs-service" {
   scheduling_strategy     = "REPLICA"
   desired_count           = 1
   force_new_deployment    = true
+
+  network_configuration {
+    subnets  = aws_subnet.public.*.id
+  }
  
   load_balancer {
     target_group_arn = aws_lb_target_group.target_group.arn

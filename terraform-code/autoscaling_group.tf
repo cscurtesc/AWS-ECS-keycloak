@@ -19,7 +19,7 @@ resource "aws_autoscaling_group" "aws_autoscaling_group" {
     value               = "Containers"
   }
 
-  target_group_arns    = [aws_lb_target_group.target_group.arn]
+#  target_group_arns    = [aws_lb_target_group.target_group.arn]
   termination_policies = ["OldestInstance"]
 
   vpc_zone_identifier = aws_subnet.public.*.id
@@ -29,8 +29,9 @@ resource "aws_autoscaling_group" "aws_autoscaling_group" {
 resource "aws_launch_configuration" "default" {
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.ecs.name
-  image_id                    = "ami-076214eda80ae72ef"
-  instance_type               = "t2.micro"
+#  image_id                    = "ami-076214eda80ae72ef"
+  image_id 		      = "ami-0ecb3533d79bc3fdb"
+  instance_type               = "m5.large"
   key_name                    = "ed-noua"
 
   lifecycle {
