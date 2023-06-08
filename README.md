@@ -50,5 +50,12 @@ or
 aws sso login --sso-session devops-prod
 ```
 
+To create or destroy the infrastructure run:
+```
+AWS_PROFILE=my-dev-profile terraform plan
+AWS_PROFILE=my-dev-profile terraform apply
+AWS_PROFILE=my-dev-profile terraform destroy
+```
+
 
 credits: https://dev.to/thnery/create-an-aws-ecs-cluster-using-terraform-g80
