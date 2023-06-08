@@ -4,7 +4,7 @@ resource "aws_ecs_task_definition" "aws-ecs-task" {
     name            = "${var.app_name}-${var.app_environment}-container"
     image           = "cscurtesc/keycloak:latest"
     essential       = true
-    command         = ["start-dev"]
+    command         = ["start-dev", "--health-enabled=true"]
     cpu             = 256
     memory          = 512
     environment     = [
