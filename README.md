@@ -52,10 +52,15 @@ aws sso login --sso-session devops-prod
 
 To create or destroy the infrastructure run:
 ```
+cd terraform-code
+AWS_PROFILE=my-dev-profile terraform init
 AWS_PROFILE=my-dev-profile terraform plan
 AWS_PROFILE=my-dev-profile terraform apply
+or to destroy
 AWS_PROFILE=my-dev-profile terraform destroy
 ```
+
+If you get some authentication error messages at the olan phase, first thing to do is to delete the ".terraform" and ".terraform_backup" folders and re-initialize
 
 
 credits: https://dev.to/thnery/create-an-aws-ecs-cluster-using-terraform-g80
